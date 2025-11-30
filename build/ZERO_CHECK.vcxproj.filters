@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\harsh\Desktop\Rubiks_Cube_Solver-main\Rubiks_Cube_Solver-main\build\CMakeFiles\cf14a8d5ddabe2d231cb1ac77a736359\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{D5EA51E2-FE0C-3EF1-A098-BEBBA4F61B39}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

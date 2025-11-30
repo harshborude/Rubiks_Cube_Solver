@@ -4,7 +4,7 @@
 #define CUBESCANNER_H
 
 #include <opencv2/opencv.hpp>
-#include "RubiksCube.h"
+#include "../Model/RubiksCube.h"
 #include "bits/stdc++.h"
 
 using namespace std;

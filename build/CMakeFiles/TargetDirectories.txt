@@ -1,0 +1,3 @@
+C:/Users/harsh/Desktop/Rubiks_Cube_Solver-main/Rubiks_Cube_Solver-main/build/CMakeFiles/rubiks_cube_solver.dir
+C:/Users/harsh/Desktop/Rubiks_Cube_Solver-main/Rubiks_Cube_Solver-main/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/harsh/Desktop/Rubiks_Cube_Solver-main/Rubiks_Cube_Solver-main/build/CMakeFiles/ZERO_CHECK.dir
