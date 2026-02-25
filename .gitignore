@@ -1,32 +1,66 @@
-# Prerequisites
-*.d
+# =========================
+# Build directories
+# =========================
+build/
+cmake-build-*/
+out/
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# =========================
+# CMake files
+# =========================
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
 
-# Precompiled Headers
-*.gch
-*.pch
+# =========================
+# Visual Studio files
+# =========================
+*.sln
+*.slnx
+*.vcxproj*
+*.filters
+*.user
+*.VC.db
+*.VC.opendb
+.vs/
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
+# =========================
+# Compiled binaries
+# =========================
 *.exe
-*.out
-*.app
+*.dll
+*.lib
+*.obj
+*.pdb
+*.ilk
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
+*.cache
+
+# =========================
+# OS generated files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+
+# =========================
+# OpenCV runtime copies (if manually copied)
+# =========================
+opencv_world*.dll
+

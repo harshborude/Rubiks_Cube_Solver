@@ -312,154 +312,81 @@
 
 using namespace std;
 
-void manualInput(RubiksCubeBitboard &cube);
-void solveCube(RubiksCubeBitboard &cube, const string &fileName);
-void scanFromCamera(RubiksCubeBitboard &cube);
-bool validateCubeColors(RubiksCubeBitboard &cube);
-
 int main() {
     try {
+        // 1. FIX THE PATH: Point to the file on YOUR computer
         string fileName = R"(C:\Users\harsh\OneDrive\Desktop\Rubiks_Cube_Solver-main\Rubiks_Cube_Solver-main\Databases\cornerDepth5V1.txt)";
+        cout << "1. Initializing Scanner..." << endl;
+        // 0 is the default webcam. If you have multiple, try 1.
 
-        RubiksCubeBitboard cube;
+        RubiksCubeBitboard cube;   // ← ADD THIS
 
-     cout << "Choose mode:\n";
-cout << "1 - Manual Input\n";
-cout << "2 - Random Shuffle\n";
-cout << "3 - Scan from Camera\n";
-cout << "Enter choice: ";
+        // CubeScanner scanner(0); 
 
-int choice;
-cin >> choice;
+        // RubiksCubeBitboard cube;
+        
+        // cout << "2. Starting Scan... (A window should open)" << endl;
+        // scanner.scan(cube);
 
-if (choice == 1) {
-    manualInput(cube);
-}
-else if (choice == 2) {
-    int depth;
-    cout << "Enter shuffle depth (e.g. 5): ";
-    cin >> depth;
+        cout << "Enter cube face by face.\n";
+cout << "Use letters: W B O G Y R\n\n";
 
-    auto scrambleMoves = cube.randomShuffleCube(depth);
+for (int face = 0; face < 6; face++) {
+    cout << "Enter 9 characters for face " << face << " (row-wise): ";
 
-    cout << "\nScramble moves:\n";
-    for (auto m : scrambleMoves)
-        cout << cube.getMove(m) << " ";
-    cout << "\n\n";
-}
-else if (choice == 3) {
-    scanFromCamera(cube);
-}
-else {
-    throw runtime_error("Invalid choice.");
-}
+    string input;
+    cin >> input;
 
-cube.print();
-
-       if (!validateCubeColors(cube)) {
-    throw runtime_error("Invalid cube state: incorrect color distribution.");
-}
-
-solveCube(cube, fileName);
-
-    } catch (const exception& e) {
-        cerr << "[CRITICAL ERROR]: " << e.what() << endl;
+    if (input.length() != 9) {
+        cout << "Invalid input length! Must be 9.\n";
         return 1;
     }
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            char c = input[i * 3 + j];
+
+            RubiksCube::COLOR color;
+
+            switch (c) {
+                case 'W': color = RubiksCube::COLOR::WHITE; break;
+                case 'R': color = RubiksCube::COLOR::RED; break;
+                case 'O': color = RubiksCube::COLOR::ORANGE; break;
+                case 'Y': color = RubiksCube::COLOR::YELLOW; break;
+                case 'G': color = RubiksCube::COLOR::GREEN; break;
+                case 'B': color = RubiksCube::COLOR::BLUE; break;
+                default:
+                    cout << "Invalid color character!\n";
+                    return 1;
+            }
+
+            cube.setColor(static_cast<RubiksCube::FACE>(face), i, j, color);
+        }
+    }
+}
+        
+        cout << "Scan complete. Cube State:" << endl;
+        cube.print();
+
+        cout << "3. Initializing Solver with Database: " << fileName << endl;
+        IDAstarSolver<RubiksCubeBitboard, HashBitboard> idAstarSolver(cube, fileName);
+        
+        cout << "4. Solving..." << endl;
+        auto solve_moves = idAstarSolver.solve();
+
+        cout << "Solution Found:" << endl;
+        for (auto move: solve_moves) cout << cube.getMove(move) << " ";
+        cout << "\n";
+        
+        idAstarSolver.rubiksCube.print();
+
+    } catch (const exception& e) {
+        // This catch block will print why it is crashing!
+        cerr << "\n[CRITICAL ERROR]: " << e.what() << endl;
+        cout << "Press Enter to exit..." << endl;
+        cin.get();
+        return 1;
+    }
+
     return 0;
-}
-
-void manualInput(RubiksCubeBitboard &cube) {
-    cout << "Enter cube face by face.\n";
-    cout << "Use letters: W B O G Y R\n\n";
-
-    for (int face = 0; face < 6; face++) {
-        cout << "Enter 9 characters for face " << face << ": ";
-
-        string input;
-        cin >> input;
-
-        if (input.length() != 9) {
-            throw runtime_error("Invalid input length! Must be 9.");
-        }
-
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                char c = input[i * 3 + j];
-
-                RubiksCube::COLOR color;
-
-                switch (c) {
-                    case 'W': color = RubiksCube::COLOR::WHITE; break;
-                    case 'R': color = RubiksCube::COLOR::RED; break;
-                    case 'O': color = RubiksCube::COLOR::ORANGE; break;
-                    case 'Y': color = RubiksCube::COLOR::YELLOW; break;
-                    case 'G': color = RubiksCube::COLOR::GREEN; break;
-                    case 'B': color = RubiksCube::COLOR::BLUE; break;
-                    default:
-                        throw runtime_error("Invalid color character.");
-                }
-
-                cube.setColor(static_cast<RubiksCube::FACE>(face), i, j, color);
-            }
-        }
-    }
-}
-
-void solveCube(RubiksCubeBitboard &cube, const string &fileName) {
-    cout << "Solving...\n";
-
-    IDAstarSolver<RubiksCubeBitboard, HashBitboard> solver(cube, fileName);
-    auto solve_moves = solver.solve();
-
-    cout << "Solution Found:\n";
-    for (auto move : solve_moves)
-        cout << cube.getMove(move) << " ";
-    cout << "\n\n";
-
-    solver.rubiksCube.print();
-}
-
-void scanFromCamera(RubiksCubeBitboard &cube) {
-    cout << "Initializing camera...\n";
-
-    CubeScanner scanner(0);  // 0 = default webcam
-    scanner.scan(cube);
-
-    cout << "Scan complete.\n";
-}
-
-bool validateCubeColors(RubiksCubeBitboard &cube) {
-
-    map<RubiksCube::COLOR, int> count;
-
-    // Initialize all counts to 0
-    count[RubiksCube::COLOR::WHITE] = 0;
-    count[RubiksCube::COLOR::YELLOW] = 0;
-    count[RubiksCube::COLOR::RED] = 0;
-    count[RubiksCube::COLOR::ORANGE] = 0;
-    count[RubiksCube::COLOR::GREEN] = 0;
-    count[RubiksCube::COLOR::BLUE] = 0;
-
-    // Count all stickers
-    for (int face = 0; face < 6; face++) {
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                auto color = cube.getColor(
-                    static_cast<RubiksCube::FACE>(face), i, j
-                );
-                count[color]++;
-            }
-        }
-    }
-
-    // Check each color has exactly 9
-    for (auto &p : count) {
-        if (p.second != 9) {
-            cout << "Color validation failed.\n";
-            return false;
-        }
-    }
-
-    return true;
 }
