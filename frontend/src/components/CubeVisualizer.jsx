@@ -1,7 +1,8 @@
 import React from 'react';
 
-const CubeVisualizer = ({ cubeState, setCubeState }) => {
+const CubeVisualizer = ({ cubeState, setCubeState, inputMode }) => {
 
+  const COLORS = ['white', 'red', 'blue', 'orange', 'green', 'yellow'];
   const colorMap = {
     white: 'bg-white',
     red: 'bg-red-500',
@@ -9,6 +10,60 @@ const CubeVisualizer = ({ cubeState, setCubeState }) => {
     orange: 'bg-orange-500',
     green: 'bg-green-500',
     yellow: 'bg-yellow-400',
+  };
+
+  const handleSquareClick = (faceKey, rIdx, cIdx, currentColor) => {
+    if (inputMode !== 'manual') return;
+    
+    // Prevent changing the center piece
+    if (rIdx === 1 && cIdx === 1) return;
+
+    // Cycle to the next color in the array
+    const currentIndex = COLORS.indexOf(currentColor);
+    const nextColor = COLORS[(currentIndex + 1) % COLORS.length];
+
+    setCubeState(prevState => {
+      const newState = { ...prevState };
+      newState[faceKey] = [
+        [...prevState[faceKey][0]],
+        [...prevState[faceKey][1]],
+        [...prevState[faceKey][2]],
+      ];
+      newState[faceKey][rIdx][cIdx] = nextColor;
+      return newState;
+    });
+  };
+
+  const setSquareColor = (faceKey, rIdx, cIdx, newColor) => {
+    if (rIdx === 1 && cIdx === 1) return; // Prevent center changes
+    setCubeState(prevState => {
+      const newState = { ...prevState };
+      newState[faceKey] = [
+        [...prevState[faceKey][0]],
+        [...prevState[faceKey][1]],
+        [...prevState[faceKey][2]],
+      ];
+      newState[faceKey][rIdx][cIdx] = newColor;
+      return newState;
+    });
+  };
+
+  const handleKeyDown = (e, faceKey, rIdx, cIdx) => {
+    if (inputMode !== 'manual') return;
+    
+    const keyMap = {
+      'w': 'white',
+      'r': 'red',
+      'b': 'blue',
+      'o': 'orange',
+      'g': 'green',
+      'y': 'yellow'
+    };
+
+    const newColor = keyMap[e.key.toLowerCase()];
+    if (newColor) {
+      setSquareColor(faceKey, rIdx, cIdx, newColor);
+    }
   };
 
   const renderFace = (faceKey, label) => {
@@ -20,8 +75,11 @@ const CubeVisualizer = ({ cubeState, setCubeState }) => {
             row.map((color, cIdx) => (
               <div
                 key={`${faceKey}-${rIdx}-${cIdx}`}
-                className={`w-8 h-8 md:w-10 md:h-10 rounded-sm border border-black/20 shadow-sm ${colorMap[color]} transition-colors duration-300 hover:brightness-110 cursor-pointer`}
-                title={`Face: ${label}, Row: ${rIdx}, Col: ${cIdx}`}
+                tabIndex={inputMode === 'manual' && !(rIdx === 1 && cIdx === 1) ? 0 : -1}
+                onClick={() => handleSquareClick(faceKey, rIdx, cIdx, color)}
+                onKeyDown={(e) => handleKeyDown(e, faceKey, rIdx, cIdx)}
+                className={`w-8 h-8 md:w-10 md:h-10 rounded-sm border border-black/20 shadow-sm transition-colors duration-200 ${colorMap[color]} ${inputMode === 'manual' && !(rIdx === 1 && cIdx === 1) ? 'cursor-pointer hover:brightness-110 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:scale-110 z-10' : 'outline-none'}`}
+                title={`Face: ${label}${rIdx === 1 && cIdx === 1 ? ' (Center fixed)' : ''}`}
               />
             ))
           )}

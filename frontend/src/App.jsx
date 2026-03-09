@@ -22,20 +22,81 @@ function App() {
   const [terminalLogs, setTerminalLogs] = useState([{ type: 'system', text: 'Ready. Waiting for input...' }]);
   const [isSolving, setIsSolving] = useState(false);
   const [selectedSolver, setSelectedSolver] = useState('IDA*');
+  const [inputMode, setInputMode] = useState('scramble');
   
   const addLog = (text, type = 'info') => {
     setTerminalLogs(prev => [...prev, { text, type }]);
   };
 
+  const validateCube = () => {
+    // 1. Check Centers
+    const expectedCenters = {
+      U: 'white',
+      L: 'green',
+      F: 'red',
+      R: 'blue',
+      B: 'orange',
+      D: 'yellow'
+    };
+
+    for (const [face, expectedColor] of Object.entries(expectedCenters)) {
+      if (cubeState[face][1][1] !== expectedColor) {
+        addLog(`Validation Error: The center piece of the ${face} face must be ${expectedColor}.`, 'error');
+        return false;
+      }
+    }
+
+    // 2. Count Colors
+    const colorCounts = {
+      white: 0,
+      green: 0,
+      red: 0,
+      blue: 0,
+      orange: 0,
+      yellow: 0
+    };
+
+    let total = 0;
+    for (const face of Object.values(cubeState)) {
+      for (const row of face) {
+        for (const color of row) {
+          if (colorCounts[color] !== undefined) {
+            colorCounts[color]++;
+            total++;
+          }
+        }
+      }
+    }
+
+    const invalidColors = Object.entries(colorCounts).filter(([_, count]) => count !== 9);
+    
+    if (invalidColors.length > 0) {
+      addLog(`Validation Error: Invalid color distribution. Each color must appear exactly 9 times.`, 'error');
+      invalidColors.forEach(([color, count]) => {
+        addLog(`- ${color} appears ${count} times (expected 9)`, 'error');
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSolve = () => {
     if (isSolving) return;
-    setIsSolving(true);
+    
     addLog(`Initiating solver using ${selectedSolver} algorithm...`, 'system');
+    addLog('Scanning cube state... Validating edge and corner permutations...', 'info');
+    
+    if (!validateCube()) {
+      addLog('Solve aborted due to invalid cube state.', 'system');
+      return;
+    }
+
+    setIsSolving(true);
     
     // Simulate solving progression
-    setTimeout(() => addLog('Scanning cube state... Validating edge and corner permutations...', 'info'), 500);
-    setTimeout(() => addLog('Cube state valid. Exploring nodes...', 'info'), 1500);
-    setTimeout(() => addLog(`Depth limit check passed. Found optimal path in 14 moves.`, 'success'), 3000);
+    setTimeout(() => addLog('Cube state valid. Exploring nodes...', 'info'), 1000);
+    setTimeout(() => addLog(`Depth limit check passed. Found optimal path in 14 moves.`, 'success'), 2500);
     
     setTimeout(() => {
       addLog('Move sequence: U R2 F B R B2 R U2 L B2 R U\' D\' R2 F R\' L B2 U2 F2', 'highlight');
@@ -44,22 +105,43 @@ function App() {
       // Reset visualizer to solved state to simulate completion
       setCubeState(initialCubeState);
       setIsSolving(false);
-    }, 4500);
+    }, 4000);
   };
 
   const handleScramble = () => {
     addLog('Generating random scramble...', 'system');
-    const colors = ['white', 'red', 'blue', 'orange', 'green', 'yellow'];
     
-    // Random visual scramble (not technically a valid rubik's cube, just for UI demonstration)
-    const scrambled = {
-      U: Array(3).fill(null).map(() => Array(3).fill(null).map(() => colors[Math.floor(Math.random() * colors.length)])),
-      L: Array(3).fill(null).map(() => Array(3).fill(null).map(() => colors[Math.floor(Math.random() * colors.length)])),
-      F: Array(3).fill(null).map(() => Array(3).fill(null).map(() => colors[Math.floor(Math.random() * colors.length)])),
-      R: Array(3).fill(null).map(() => Array(3).fill(null).map(() => colors[Math.floor(Math.random() * colors.length)])),
-      B: Array(3).fill(null).map(() => Array(3).fill(null).map(() => colors[Math.floor(Math.random() * colors.length)])),
-      D: Array(3).fill(null).map(() => Array(3).fill(null).map(() => colors[Math.floor(Math.random() * colors.length)])),
+    // Create a pool of remaining stickers (8 of each color, since 1 is locked in the center)
+    const pool = [
+      ...Array(8).fill('white'),
+      ...Array(8).fill('green'),
+      ...Array(8).fill('red'),
+      ...Array(8).fill('blue'),
+      ...Array(8).fill('orange'),
+      ...Array(8).fill('yellow')
+    ];
+    
+    // Shuffle the pool using Fisher-Yates
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    const expectedCenters = {
+      U: 'white', L: 'green', F: 'red', R: 'blue', B: 'orange', D: 'yellow'
     };
+
+    let poolIndex = 0;
+    const scrambled = {};
+
+    for (const [face, centerColor] of Object.entries(expectedCenters)) {
+      scrambled[face] = Array(3).fill(null).map((_, rIdx) => 
+        Array(3).fill(null).map((_, cIdx) => {
+          if (rIdx === 1 && cIdx === 1) return centerColor; // Fixed center
+          return pool[poolIndex++];
+        })
+      );
+    }
     
     setCubeState(scrambled);
     addLog('Scramble applied.', 'info');
@@ -77,12 +159,22 @@ function App() {
       <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left/Top Column: Visualizer */}
         <div className="lg:col-span-7 w-full flex justify-center">
-          <CubeVisualizer cubeState={cubeState} setCubeState={setCubeState} />
+          <CubeVisualizer 
+            cubeState={cubeState} 
+            setCubeState={setCubeState} 
+            inputMode={inputMode}
+          />
         </div>
 
         {/* Right/Bottom Column: Controls */}
         <div className="lg:col-span-5 w-full flex flex-col gap-6">
-          <InputControls onScramble={handleScramble} addLog={addLog} setCubeState={setCubeState} />
+          <InputControls 
+            onScramble={handleScramble} 
+            addLog={addLog} 
+            setCubeState={setCubeState} 
+            inputMode={inputMode}
+            setInputMode={setInputMode}
+          />
           
           <SolverControls 
             selectedSolver={selectedSolver} 
