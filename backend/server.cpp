@@ -32,11 +32,33 @@ int main(int argc, char* argv[]) {
         dbFile = argv[1];
     }
 
-    CROW_ROUTE(app, "/api/solve").methods(crow::HTTPMethod::POST)
+    CROW_ROUTE(app, "/api/solve").methods(crow::HTTPMethod::POST, crow::HTTPMethod::OPTIONS)
     ([&dbFile](const crow::request& req) {
+        
+        // Handle CORS Pre-flight Options Request
+        if (req.method == crow::HTTPMethod::OPTIONS) {
+            crow::response res(204);
+            res.add_header("Access-Control-Allow-Origin", "*");
+            res.add_header("Access-Control-Allow-Methods", "POST, OPTIONS");
+            res.add_header("Access-Control-Allow-Headers", "Content-Type");
+            res.add_header("Access-Control-Max-Age", "86400");
+            return res;
+        }
+
+        // Helper to attach CORS to any response
+        auto attach_cors = [](crow::response& r) {
+            r.add_header("Access-Control-Allow-Origin", "*");
+            r.add_header("Access-Control-Allow-Methods", "POST, OPTIONS");
+            r.add_header("Access-Control-Allow-Headers", "Content-Type");
+            return r;
+        };
+
         try {
             auto body = crow::json::load(req.body);
-            if (!body) return crow::response(400, "Invalid JSON body");
+            if (!body) {
+                crow::response errRes(400, "Invalid JSON body");
+                return attach_cors(errRes);
+            }
 
             RubiksCubeBitboard cube;
 
@@ -71,7 +93,8 @@ int main(int argc, char* argv[]) {
                 BFSSolver<RubiksCubeBitboard, HashBitboard> solver(cube);
                 solve_moves = solver.solve();
             } else {
-                return crow::response(400, "Unsupported algorithm selected.");
+                crow::response errRes(400, "Unsupported algorithm selected.");
+                return attach_cors(errRes);
             }
 
             auto end = chrono::high_resolution_clock::now();
@@ -89,31 +112,17 @@ int main(int argc, char* argv[]) {
             jsonResponse["status"] = "success";
 
             crow::response res(jsonResponse);
-
-            // Important: Handle CORS so the React Frontend can hit this API
-            res.add_header("Access-Control-Allow-Origin", "*");
-            res.add_header("Access-Control-Allow-Methods", "POST, OPTIONS");
-            res.add_header("Access-Control-Allow-Headers", "Content-Type");
-            return res;
+            return attach_cors(res);
 
         } catch (const std::exception& e) {
             std::string errStr(e.what());
             crow::json::wvalue failureRes;
             failureRes["status"] = "error";
             failureRes["message"] = errStr;
-            return crow::response(500, failureRes);
+            
+            crow::response errRes(500, failureRes);
+            return attach_cors(errRes);
         }
-    });
-
-    // CORS pre-flight handler
-    CROW_ROUTE(app, "/api/solve").methods(crow::HTTPMethod::OPTIONS)
-    ([]() {
-        crow::response res(204);
-        res.add_header("Access-Control-Allow-Origin", "*");
-        res.add_header("Access-Control-Allow-Methods", "POST, OPTIONS");
-        res.add_header("Access-Control-Allow-Headers", "Content-Type");
-        res.add_header("Access-Control-Max-Age", "86400");
-        return res;
     });
 
     // Use absolute port $PORT provided by Render, or 8080 locally

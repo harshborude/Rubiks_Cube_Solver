@@ -4,7 +4,7 @@
 #define RUBIKS_CUBE_SOLVER_MATH_H
 
 
-#include <cstdint>
+#include <stdint.h>
 
 uint32_t factorial(uint32_t n);
 uint32_t pick(uint32_t n, uint32_t k);
