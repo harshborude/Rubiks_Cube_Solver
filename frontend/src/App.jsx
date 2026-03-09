@@ -81,7 +81,7 @@ function App() {
     return true;
   };
 
-  const handleSolve = () => {
+  const handleSolve = async () => {
     if (isSolving) return;
     
     addLog(`Initiating solver using ${selectedSolver} algorithm...`, 'system');
@@ -93,19 +93,52 @@ function App() {
     }
 
     setIsSolving(true);
-    
-    // Simulate solving progression
-    setTimeout(() => addLog('Cube state valid. Exploring nodes...', 'info'), 1000);
-    setTimeout(() => addLog(`Depth limit check passed. Found optimal path in 14 moves.`, 'success'), 2500);
-    
-    setTimeout(() => {
-      addLog('Move sequence: U R2 F B R B2 R U2 L B2 R U\' D\' R2 F R\' L B2 U2 F2', 'highlight');
-      addLog('Cube solved successfully.', 'success');
-      addLog(`Solved in ${(Math.random() * 2 + 0.5).toFixed(4)} seconds!`, 'highlight');
-      // Reset visualizer to solved state to simulate completion
-      setCubeState(initialCubeState);
+    addLog('Cube valid. Contacting solver API...', 'system');
+
+    try {
+      // Replace this URL when your Render service is live!
+      // Example: 'https://rubiks-cube-solver-api.onrender.com/api/solve'
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/solve';
+
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          algorithm: selectedSolver,
+          U: cubeState.U,
+          L: cubeState.L,
+          F: cubeState.F,
+          R: cubeState.R,
+          B: cubeState.B,
+          D: cubeState.D
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API returned status ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.status === 'success') {
+        addLog(`Depth limit check passed. Optimal path found!`, 'success');
+        addLog(`Move sequence: ${data.moves.join(' ')}`, 'highlight');
+        addLog('Cube solved successfully.', 'success');
+        addLog(`Solved in ${data.timeSeconds} seconds.`, 'highlight');
+        
+        // Reset to solved state for wow factor
+        setCubeState(initialCubeState);
+      } else {
+         addLog(`Solver Error: ${data.message}`, 'error');
+      }
+
+    } catch (error) {
+      addLog(`Network Error: Ensure the C++ backend is running. ${error.message}`, 'error');
+    } finally {
       setIsSolving(false);
-    }, 4000);
+    }
   };
 
   const handleScramble = () => {
