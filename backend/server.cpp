@@ -45,19 +45,14 @@ int main(int argc, char* argv[]) {
             return res;
         }
 
-        // Helper to attach CORS to any response
-        auto attach_cors = [](crow::response& r) {
-            r.add_header("Access-Control-Allow-Origin", "*");
-            r.add_header("Access-Control-Allow-Methods", "POST, OPTIONS");
-            r.add_header("Access-Control-Allow-Headers", "Content-Type");
-            return r;
-        };
-
         try {
             auto body = crow::json::load(req.body);
             if (!body) {
                 crow::response errRes(400, "Invalid JSON body");
-                return attach_cors(errRes);
+                errRes.add_header("Access-Control-Allow-Origin", "*");
+                errRes.add_header("Access-Control-Allow-Methods", "POST, OPTIONS");
+                errRes.add_header("Access-Control-Allow-Headers", "Content-Type");
+                return errRes;
             }
 
             RubiksCubeBitboard cube;
@@ -94,7 +89,10 @@ int main(int argc, char* argv[]) {
                 solve_moves = solver.solve();
             } else {
                 crow::response errRes(400, "Unsupported algorithm selected.");
-                return attach_cors(errRes);
+                errRes.add_header("Access-Control-Allow-Origin", "*");
+                errRes.add_header("Access-Control-Allow-Methods", "POST, OPTIONS");
+                errRes.add_header("Access-Control-Allow-Headers", "Content-Type");
+                return errRes;
             }
 
             auto end = chrono::high_resolution_clock::now();
@@ -112,7 +110,10 @@ int main(int argc, char* argv[]) {
             jsonResponse["status"] = "success";
 
             crow::response res(jsonResponse);
-            return attach_cors(res);
+            res.add_header("Access-Control-Allow-Origin", "*");
+            res.add_header("Access-Control-Allow-Methods", "POST, OPTIONS");
+            res.add_header("Access-Control-Allow-Headers", "Content-Type");
+            return res;
 
         } catch (const std::exception& e) {
             std::string errStr(e.what());
@@ -121,7 +122,10 @@ int main(int argc, char* argv[]) {
             failureRes["message"] = errStr;
             
             crow::response errRes(500, failureRes);
-            return attach_cors(errRes);
+            errRes.add_header("Access-Control-Allow-Origin", "*");
+            errRes.add_header("Access-Control-Allow-Methods", "POST, OPTIONS");
+            errRes.add_header("Access-Control-Allow-Headers", "Content-Type");
+            return errRes;
         }
     });
 
