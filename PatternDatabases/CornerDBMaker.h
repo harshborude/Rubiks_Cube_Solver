@@ -3,6 +3,7 @@
 #define RUBIKS_CUBE_SOLVER_CORNERDBMAKER_H
 #include "CornerPatternDatabase.h"
 #include "../Model/RubiksCubeBitboard.cpp"
+#include <queue>
 
 using namespace std;
 

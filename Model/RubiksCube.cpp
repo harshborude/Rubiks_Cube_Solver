@@ -21,6 +21,7 @@ char RubiksCube::getColorLetter(COLOR color) {
         case COLOR::ORANGE:
             return 'O';
     }
+    return 'W'; // Default return to satisfy GCC
 }
 
 /*
@@ -65,6 +66,7 @@ string RubiksCube::getMove(MOVE ind) {
         case MOVE::B2:
             return "B2";
     }
+    return ""; // Default return to satisfy GCC
 }
 
 /*
@@ -109,6 +111,7 @@ RubiksCube &RubiksCube::move(MOVE ind) {
         case MOVE::B2:
             return this->b2();
     }
+    return *this; // Default return to satisfy GCC
 }
 
 /*
@@ -153,6 +156,7 @@ RubiksCube &RubiksCube::invert(MOVE ind) {
         case MOVE::B2:
             return this->b2();
     }
+    return *this; // Default return to satisfy GCC
 }
 
 void RubiksCube::print() const {
