@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
-#include "Model/RubiksCubeBitboard.h"
+#include "Model/RubiksCubeBitboard.cpp"
 #include "Solver/IDAstarSolver.h"
 #include "Solver/BFSSolver.h"
 

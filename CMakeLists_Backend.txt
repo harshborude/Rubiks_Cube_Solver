@@ -18,9 +18,9 @@ FetchContent_MakeAvailable(Crow)
 add_executable(server
     backend/server.cpp
     Model/RubiksCube.cpp
-    Model/RubiksCube3dArray.cpp
-    Model/RubiksCube1dArray.cpp
-    Model/RubiksCubeBitboard.cpp
+    # Model/RubiksCube3dArray.cpp is header-included
+    # Model/RubiksCube1dArray.cpp is header-included
+    # Model/RubiksCubeBitboard.cpp is header-included
     PatternDatabases/NibbleArray.cpp
     PatternDatabases/PatternDatabase.cpp
     PatternDatabases/CornerPatternDatabase.cpp
