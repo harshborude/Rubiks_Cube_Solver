@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/harsh/OneDrive/Desktop/Rubiks_Cube_Solver-main/Rubiks_Cube_Solver-main
+# Install script for directory: C:/Users/harsh/OneDrive/Documents/GitHub/Rubiks_Cube_Solver
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files/rubiks_cube_solver")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/rubiks_cube_solver")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -12,7 +12,7 @@ if(NOT DEFINED CMAKE_INSTALL_CONFIG_NAME)
     string(REGEX REPLACE "^[^A-Za-z0-9_]+" ""
            CMAKE_INSTALL_CONFIG_NAME "${BUILD_TYPE}")
   else()
-    set(CMAKE_INSTALL_CONFIG_NAME "Release")
+    set(CMAKE_INSTALL_CONFIG_NAME "Debug")
   endif()
   message(STATUS "Install configuration: \"${CMAKE_INSTALL_CONFIG_NAME}\"")
 endif()
@@ -35,7 +35,7 @@ endif()
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "C:/Users/harsh/OneDrive/Desktop/Rubiks_Cube_Solver-main/Rubiks_Cube_Solver-main/build/install_local_manifest.txt"
+  file(WRITE "C:/Users/harsh/OneDrive/Documents/GitHub/Rubiks_Cube_Solver/build/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()
 if(CMAKE_INSTALL_COMPONENT)
@@ -51,6 +51,6 @@ else()
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "C:/Users/harsh/OneDrive/Desktop/Rubiks_Cube_Solver-main/Rubiks_Cube_Solver-main/build/${CMAKE_INSTALL_MANIFEST}"
+  file(WRITE "C:/Users/harsh/OneDrive/Documents/GitHub/Rubiks_Cube_Solver/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

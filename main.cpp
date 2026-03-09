@@ -407,17 +407,58 @@ void manualInput(RubiksCubeBitboard &cube) {
 }
 
 void solveCube(RubiksCubeBitboard &cube, const string &fileName) {
-    cout << "Solving...\n";
+    cout << "\nChoose solver algorithm:\n";
+    cout << "1 - IDA*\n";
+    cout << "2 - BFS\n";
+    cout << "3 - DFS\n";
+    cout << "4 - IDDFS\n";
+    cout << "Enter choice: ";
+    int algo_choice;
+    cin >> algo_choice;
 
-    IDAstarSolver<RubiksCubeBitboard, HashBitboard> solver(cube, fileName);
-    auto solve_moves = solver.solve();
+    vector<RubiksCube::MOVE> solve_moves;
+    auto start = chrono::high_resolution_clock::now();
+
+    if (algo_choice == 1) {
+        cout << "Solving with IDA*...\n";
+        IDAstarSolver<RubiksCubeBitboard, HashBitboard> solver(cube, fileName);
+        solve_moves = solver.solve();
+        solver.rubiksCube.print();
+    } else if (algo_choice == 2) {
+        cout << "Solving with BFS...\n";
+        BFSSolver<RubiksCubeBitboard, HashBitboard> solver(cube);
+        solve_moves = solver.solve();
+        solver.rubiksCube.print();
+    } else if (algo_choice == 3) {
+        int depth;
+        cout << "Enter max depth for DFS: ";
+        cin >> depth;
+        cout << "Solving with DFS...\n";
+        DFSSolver<RubiksCubeBitboard, HashBitboard> solver(cube, depth);
+        solve_moves = solver.solve();
+        solver.rubiksCube.print();
+    } else if (algo_choice == 4) {
+        int depth;
+        cout << "Enter max depth for IDDFS: ";
+        cin >> depth;
+        cout << "Solving with IDDFS...\n";
+        IDDFSSolver<RubiksCubeBitboard, HashBitboard> solver(cube, depth);
+        solve_moves = solver.solve();
+        solver.rubiksCube.print();
+    } else {
+        cout << "Invalid choice!\n";
+        return;
+    }
+
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> duration = end - start;
 
     cout << "Solution Found:\n";
     for (auto move : solve_moves)
         cout << cube.getMove(move) << " ";
     cout << "\n\n";
 
-    solver.rubiksCube.print();
+    cout << "Solved in " << duration.count() << " seconds!\n";
 }
 
 void scanFromCamera(RubiksCubeBitboard &cube) {
