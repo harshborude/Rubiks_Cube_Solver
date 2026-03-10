@@ -1,0 +1,55 @@
+# Rubik's Cube Solver
+
+##  Project Overview
+The **Rubik's Cube Solver** is a high-performance C++ application designed to simulate and solve a 3x3x3 Rubik's Cube. It implements multiple internal representations of the cube (1D Array, 3D Array, and Bitboard) to optimize performance. The project utilizes various graph search algorithms, including BFS, DFS, IDDFS, and IDA*, heavily optimized using Pattern Databases to find optimal solutions efficiently.
+
+##  Features
+* **Multiple Cube Models:** Efficient state representations using 1D Arrays, 3D Arrays, and 64-bit Bitboards.
+* **Advanced Search Algorithms:** Includes Breadth-First Search (BFS), Depth-First Search (DFS), Iterative Deepening DFS (IDDFS), and Iterative Deepening A* (IDA*).
+* **Pattern Databases:** Uses pre-computed corner pattern databases for heuristic optimizations in IDA*, vastly reducing the search space.
+* **Interactive Scanner:** Allows users to input customized cube states or randomly shuffle a solved cube.
+
+##  Prerequisites
+Before downloading, ensure you have the following installed on your system:
+* **C++ Compiler:** GCC, Clang, or MSVC (Needs C++14 or higher support)
+* **CMake:** Version 3.10 or higher (for building the project)
+* **Git:** To clone the repository
+
+##  How to Download and Run
+
+**2. Build the project using CMake**
+```bash
+git clone [https://github.com/harshborude/rubiks_cube_solver.git](https://github.com/harshborude/rubiks_cube_solver.git)
+cd rubiks_cube_solver
+```
+**1. Clone the repository**
+# Create a build directory
+```bash
+mkdir build
+cd build
+```
+
+# Generate build files
+```bash
+cmake ..
+```
+
+# Compile the code
+```bash
+make  # On Windows, you can use: cmake --build .
+```
+
+**2. Build the project using CMake**
+
+
+# On Linux/macOS
+```bash
+./rubiks_cube_solver
+```
+
+# On Windows
+```bash
+Debug\rubiks_cube_solver.exe
+```
+
+

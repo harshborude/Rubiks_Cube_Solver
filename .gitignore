@@ -1,0 +1,69 @@
+# =========================
+# Build directories
+# =========================
+build/
+cmake-build-*/
+out/
+
+# =========================
+# CMake files
+# =========================
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+
+# =========================
+# Visual Studio files
+# =========================
+*.sln
+*.slnx
+*.vcxproj*
+*.filters
+*.user
+*.VC.db
+*.VC.opendb
+.vs/
+
+# =========================
+# Compiled binaries
+# =========================
+*.exe
+*.dll
+*.lib
+*.obj
+*.pdb
+*.ilk
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
+*.cache
+
+# =========================
+# OS generated files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+
+# =========================
+# OpenCV runtime copies (if manually copied)
+# =========================
+opencv_world*.dll
+
+
+node_modules/
+.env
