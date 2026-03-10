@@ -19,7 +19,9 @@ const colorToChar = {
 // C++ FACE enum order: UP(0), LEFT(1), FRONT(2), RIGHT(3), BACK(4), DOWN(5)
 const faceOrder = ['U', 'L', 'F', 'R', 'B', 'D'];
 
-const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:3001' : '';
+// If deployed to Vercel, VITE_BACKEND_URL must be set to the Render URL.
+// Otherwise, it falls back to the local backend or relative paths.
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? 'http://localhost:3001' : '');
 
 // Default solved state
 const initializeFace = (color) => Array(3).fill(null).map(() => Array(3).fill(color));
