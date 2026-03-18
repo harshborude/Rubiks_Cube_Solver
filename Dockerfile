@@ -17,7 +17,7 @@ COPY Scanner ./Scanner
 COPY Solver ./Solver
 COPY main.cpp ./
 # We can just build with g++ since it's a single executable now, no need for CMake
-RUN g++ -std=c++17 -O2 -o rubiks_cube_solver.exe main.cpp Model/RubiksCube.cpp Model/RubiksCube3dArray.cpp Model/RubiksCube1dArray.cpp PatternDatabases/NibbleArray.cpp PatternDatabases/PatternDatabase.cpp PatternDatabases/CornerPatternDatabase.cpp PatternDatabases/CornerDBMaker.cpp PatternDatabases/math.cpp -I .
+RUN g++ -std=c++17 -O2 -o rubiks_cube_solver main.cpp Model/RubiksCube.cpp Model/RubiksCube3dArray.cpp Model/RubiksCube1dArray.cpp PatternDatabases/NibbleArray.cpp PatternDatabases/PatternDatabase.cpp PatternDatabases/CornerPatternDatabase.cpp PatternDatabases/CornerDBMaker.cpp PatternDatabases/math.cpp -I .
 
 # Stage 3: Production Node.js server
 FROM node:18-slim
@@ -34,7 +34,7 @@ COPY backend/server.js ./
 
 # Copy C++ executable and Databases
 WORKDIR /app
-COPY --from=cpp-build /app/rubiks_cube_solver.exe ./
+COPY --from=cpp-build /app/rubiks_cube_solver ./
 COPY Databases ./Databases
 
 # Copy built React files
