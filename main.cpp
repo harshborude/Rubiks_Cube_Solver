@@ -319,9 +319,9 @@ string validateSolvability(RubiksCube1dArray &cube);
 
 int main(int argc, char* argv[]) {
     try {
-        string fileName = R"(C:\Users\harsh\OneDrive\Desktop\coding shit\Rubiks_Cube_Solver-safe-local-deployed\Rubiks_Cube_Solver-safe-local-deployed\Databases\cornerDepth5V1.txt)";
 
-        RubiksCube1dArray cube;
+    string fileName = "Databases/cornerDepth5V1.txt";
+    RubiksCube1dArray cube;
 
         // If an argument is provided (e.g. from Node backend), parse it and run non-interactively
         if (argc >= 2) {

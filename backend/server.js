@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 // Path to the compiled C++ executable
-const solverPath = path.join(__dirname, '..', 'rubiks_cube_solver.exe'); 
+const solverPath = path.join(__dirname, '..', 'rubiks_cube_solver');
 
 // Timeout for the solver process (30 seconds)
 const SOLVE_TIMEOUT_MS = 30000;
@@ -67,7 +67,7 @@ app.post('/solve', (req, res) => {
 
     // Map frontend algorithm strings to C++ numeric IDs
     // 1 - IDA*, 2 - BFS, 3 - DFS, 4 - IDDFS
-    let algoId = '1'; 
+    let algoId = '1';
     if (algorithm === 'BFS') algoId = '2';
     else if (algorithm === 'DFS') algoId = '3';
     else if (algorithm === 'IDDFS') algoId = '4';
@@ -77,29 +77,29 @@ app.post('/solve', (req, res) => {
         if (error) {
             if (error.killed) {
                 console.error('Solver timed out after 30 seconds.');
-                return res.status(408).json({ 
+                return res.status(408).json({
                     error: 'Solver timed out. The cube state may be unsolvable or too complex.',
                     details: 'The IDA* solver exceeded the 30-second time limit.'
                 });
             }
             console.error(`Execution error: ${error}`);
-            return res.status(500).json({ 
-                error: 'Failed to execute C++ solver', 
+            return res.status(500).json({
+                error: 'Failed to execute C++ solver',
                 details: error.message,
                 stderr: stderr
             });
         }
-        
+
         if (stderr) {
             console.warn(`Solver stderr: ${stderr}`);
         }
 
         const movesOutput = stdout.trim();
         console.log(`Solver output: ${movesOutput}`);
-        
+
         // If output contains "Error", it's a real error
         if (movesOutput.includes("Error")) {
-             return res.status(400).json({ error: 'Solver returned an error', details: movesOutput });
+            return res.status(400).json({ error: 'Solver returned an error', details: movesOutput });
         }
 
         // Empty output means the cube is already solved (0 moves needed)
