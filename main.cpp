@@ -309,6 +309,7 @@
 #include "Solver/IDAstarSolver.h"
 #include "PatternDatabases/CornerDBMaker.h"
 #include "Model/RubiksCube1dArray.cpp"
+// RubiksCubeBitboard.cpp is already included via CornerDBMaker.h → do NOT include again (ODR violation)
 
 using namespace std;
 
@@ -350,6 +351,124 @@ int main(int argc, char* argv[]) {
                     }
                 }
                 cout << endl;
+                return 0;
+            }
+
+            // SERVER MODE: rubiks_cube_solver server
+            // Loads the pattern database ONCE, then loops reading commands from
+            // stdin and writing results to stdout.
+            //
+            // Protocol (one command per line):
+            //   "scramble <depth>"          → MOVES: ...\nSTATE: ...\nDONE
+            //   "solve <54chars> <algoId>"  → <moves>\nDONE  (or Error: ...\nDONE)
+            //
+            // "DONE" (followed by a newline) marks the end of each response so
+            // the Node.js parent process knows when to stop reading.
+            if (mode == "server") {
+                // Load DB once — this is the ~180ms cost we now pay only at startup
+                CornerPatternDatabase preloadedDB;
+                preloadedDB.fromFile(fileName);
+                cerr << "Solver server ready" << endl; // signal on stderr (Node reads this)
+
+                string line;
+                while (getline(cin, line)) {
+                    if (!line.empty() && line.back() == '\r') line.pop_back(); // strip \r on Windows
+                    if (line.empty()) continue;
+
+                    istringstream iss(line);
+                    string cmd;
+                    iss >> cmd;
+
+                    if (cmd == "scramble") {
+                        int depth = 5;
+                        iss >> depth;
+                        depth = max(1, min(depth, 8));
+
+                        RubiksCube1dArray scube;
+                        auto shuffleMoves = scube.randomShuffleCube(depth);
+
+                        cout << "MOVES:";
+                        for (auto m : shuffleMoves) cout << scube.getMove(m) << " ";
+                        cout << "\n";
+
+                        cout << "STATE:";
+                        for (int face = 0; face < 6; face++)
+                            for (int i = 0; i < 3; i++)
+                                for (int j = 0; j < 3; j++)
+                                    cout << RubiksCube::getColorLetter(
+                                        scube.getColor(static_cast<RubiksCube::FACE>(face), i, j));
+                        cout << "\n";
+
+                    } else if (cmd == "solve") {
+                        string stateStr;
+                        int algoId = 1;
+                        iss >> stateStr >> algoId;
+
+                        if (stateStr.length() != 54) {
+                            cout << "Error: Expected 54 characters.\n";
+                        } else {
+                            RubiksCube1dArray scube;
+                            bool parseOk = true;
+                            for (int f = 0; f < 6 && parseOk; f++) {
+                                for (int i = 0; i < 3 && parseOk; i++) {
+                                    for (int j = 0; j < 3 && parseOk; j++) {
+                                        char c = stateStr[f * 9 + i * 3 + j];
+                                        RubiksCube::COLOR col;
+                                        switch (c) {
+                                            case 'W': col = RubiksCube::COLOR::WHITE;  break;
+                                            case 'R': col = RubiksCube::COLOR::RED;    break;
+                                            case 'O': col = RubiksCube::COLOR::ORANGE; break;
+                                            case 'Y': col = RubiksCube::COLOR::YELLOW; break;
+                                            case 'G': col = RubiksCube::COLOR::GREEN;  break;
+                                            case 'B': col = RubiksCube::COLOR::BLUE;   break;
+                                            default:  parseOk = false; break;
+                                        }
+                                        if (parseOk) scube.setColor(static_cast<RubiksCube::FACE>(f), i, j, col);
+                                    }
+                                }
+                            }
+
+                            if (!parseOk) {
+                                cout << "Error: Invalid color character.\n";
+                            } else if (!validateCubeColors(scube)) {
+                                cout << "Error: Invalid colors.\n";
+                            } else {
+                                string solvErr = validateSolvability(scube);
+                                if (!solvErr.empty()) {
+                                    cout << "Error: " << solvErr << "\n";
+                                } else {
+                                    // Convert to Bitboard for faster hashing/moves
+                                    RubiksCubeBitboard cubeBB;
+                                    for (int f = 0; f < 6; f++)
+                                        for (int i = 0; i < 3; i++)
+                                            for (int j = 0; j < 3; j++)
+                                                cubeBB.setColor(static_cast<RubiksCube::FACE>(f), i, j,
+                                                    scube.getColor(static_cast<RubiksCube::FACE>(f), i, j));
+
+                                    vector<RubiksCube::MOVE> solve_moves;
+                                    if (algoId == 1) {
+                                        IDAstarSolver<RubiksCubeBitboard, HashBitboard> solver(cubeBB, preloadedDB);
+                                        solve_moves = solver.solve();
+                                    } else if (algoId == 2) {
+                                        BFSSolver<RubiksCubeBitboard, HashBitboard> solver(cubeBB);
+                                        solve_moves = solver.solve();
+                                    } else if (algoId == 3) {
+                                        DFSSolver<RubiksCubeBitboard, HashBitboard> solver(cubeBB, 8);
+                                        solve_moves = solver.solve();
+                                    } else if (algoId == 4) {
+                                        IDDFSSolver<RubiksCubeBitboard, HashBitboard> solver(cubeBB, 8);
+                                        solve_moves = solver.solve();
+                                    }
+
+                                    for (auto mv : solve_moves) cout << scube.getMove(mv) << " ";
+                                    cout << "\n";
+                                }
+                            }
+                        }
+                    }
+
+                    cout << "DONE" << endl; // endl flushes the entire stdout buffer
+                }
                 return 0;
             }
 
@@ -395,18 +514,26 @@ int main(int argc, char* argv[]) {
                 algo_choice = stoi(argv[2]);
             }
 
+            // Convert to Bitboard for faster hashing and move operations
+            RubiksCubeBitboard cubeBB;
+            for (int f = 0; f < 6; f++)
+                for (int i = 0; i < 3; i++)
+                    for (int j = 0; j < 3; j++)
+                        cubeBB.setColor(static_cast<RubiksCube::FACE>(f), i, j,
+                                        cube.getColor(static_cast<RubiksCube::FACE>(f), i, j));
+
             vector<RubiksCube::MOVE> solve_moves;
             if (algo_choice == 1) {
-                IDAstarSolver<RubiksCube1dArray, Hash1d> solver(cube, fileName);
+                IDAstarSolver<RubiksCubeBitboard, HashBitboard> solver(cubeBB, fileName);
                 solve_moves = solver.solve();
             } else if (algo_choice == 2) {
-                BFSSolver<RubiksCube1dArray, Hash1d> solver(cube);
+                BFSSolver<RubiksCubeBitboard, HashBitboard> solver(cubeBB);
                 solve_moves = solver.solve();
             } else if (algo_choice == 3) {
-                DFSSolver<RubiksCube1dArray, Hash1d> solver(cube, 8);
+                DFSSolver<RubiksCubeBitboard, HashBitboard> solver(cubeBB, 8);
                 solve_moves = solver.solve();
             } else if (algo_choice == 4) {
-                IDDFSSolver<RubiksCube1dArray, Hash1d> solver(cube, 8);
+                IDDFSSolver<RubiksCubeBitboard, HashBitboard> solver(cubeBB, 8);
                 solve_moves = solver.solve();
             }
             

@@ -1,110 +1,106 @@
-
-
-#include<bits/stdc++.h>
+#include <bits/stdc++.h>
+#include <climits>
 #include "../Model/RubiksCube.h"
-//#include "../Model/PatternDatabase/PatternDatabase.h"
 #include "../PatternDatabases/CornerPatternDatabase.h"
 
 #ifndef RUBIKS_CUBE_SOLVER_IDASTARSOLVER_H
 #define RUBIKS_CUBE_SOLVER_IDASTARSOLVER_H
 
+// True IDA* (Iterative Deepening A*) using recursive DFS with a cost bound.
+//
+// Key differences from the old priority-queue (A*) version:
+//   - O(depth) memory instead of O(nodes): no more OOM for deep states
+//   - Same-face + opposite-face pruning cuts the search tree by ~5-6x
+//   - Path is tracked directly; moves are undone in-place on backtrack
+//   - Supports a pre-loaded DB to avoid the ~180ms file read in server mode
+//
+// MOVE face groups  (move_index / 3 == face_id):
+//   0=L  1=R  2=U  3=D  4=F  5=B
+// Opposite pairs share the same (face/2) value: (L,R)->0, (U,D)->1, (F,B)->2
+// Canonical pruning: if last face was the higher of a pair (R,D,B), skip the
+// lower (L,U,F) — these moves commute so the reversed order is a duplicate.
+
 template<typename T, typename H>
 class IDAstarSolver {
 private:
-    CornerPatternDatabase cornerDB;
-    vector<RubiksCube::MOVE> moves;
-    unordered_map<T, RubiksCube::MOVE, H> move_done;
-    unordered_map<T, bool, H> visited;
+    std::unique_ptr<CornerPatternDatabase> ownedDB; // non-null when loading from file
+    CornerPatternDatabase* dbPtr;                   // always points to the active DB
 
-    struct Node {
-        T cube;
-        int depth;
-        int estimate;
+    std::vector<RubiksCube::MOVE> path;
 
-        Node(T _cube, int _depth, int _estimate) : cube(_cube), depth(_depth), estimate(_estimate) {};
-    };
-
-    struct compareCube {
-        bool operator()(pair<Node, int> const &p1, pair<Node, int> const &p2) {
-            auto n1 = p1.first, n2 = p2.first;
-            if (n1.depth + n1.estimate == n2.depth + n2.estimate) {
-                return n1.estimate > n2.estimate;
-            } else return n1.depth + n1.estimate > n2.depth + n2.estimate;
+    // Recursive DFS step.
+    //   cube     — current state, modified in-place and undone on backtrack
+    //   g        — cost so far (number of moves applied)
+    //   bound    — current IDA* cost bound
+    //   lastFace — face index of the last applied move (-1 = none)
+    //   nextBnd  — updated to the minimum f-cost that exceeded bound
+    // Returns true when a solution is found; path contains the move sequence.
+    bool dfs(T& cube, int g, int bound, int lastFace, int& nextBnd) {
+        int h = dbPtr->getNumMoves(cube);
+        int f = g + h;
+        if (f > bound) {
+            if (f < nextBnd) nextBnd = f;
+            return false;
         }
-    };
+        if (cube.isSolved()) return true;
 
-    void resetStructure() {
-        moves.clear();
-        move_done.clear();
-        visited.clear();
-    }
+        for (int i = 0; i < 18; i++) {
+            int face = i / 3;
 
-// returns {solved cube, bound}: if the cube was solved
-// returns {rubiksCube, next_bound}, if the cube was not solved
-    pair<T, int> IDAstar(int bound) {
-//        priority_queue contains pair(Node, move done to reach that)
-        priority_queue<pair<Node, int>, vector<pair<Node, int>>, compareCube> pq;
-        Node start = Node(rubiksCube, 0, cornerDB.getNumMoves(rubiksCube));
-        pq.push(make_pair(start, 0));
-        int next_bound = 100;
-        while (!pq.empty()) {
-            auto p = pq.top();
-            Node node = p.first;
-            pq.pop();
+            // Prune 1: don't move the same face twice in a row
+            if (face == lastFace) continue;
 
-            if (visited[node.cube]) continue;
+            // Prune 2: canonical ordering for opposite-face pairs.
+            // If last face was the higher of a pair (R=1, D=3, B=5), skip
+            // the lower (L=0, U=2, F=4) to avoid enumerating both R→L and L→R.
+            if (lastFace != -1 && (lastFace / 2 == face / 2) && (lastFace > face)) continue;
 
-            visited[node.cube] = true;
-            move_done[node.cube] = RubiksCube::MOVE(p.second);
+            auto mv = RubiksCube::MOVE(i);
+            cube.move(mv);
+            path.push_back(mv);
 
-            if (node.cube.isSolved()) return make_pair(node.cube, bound);
-            node.depth++;
-            for (int i = 0; i < 18; i++) {
-                auto curr_move = RubiksCube::MOVE(i);
-                node.cube.move(curr_move);
-                if (!visited[node.cube]) {
-                    node.estimate = cornerDB.getNumMoves(node.cube);
-                    if (node.estimate + node.depth > bound) {
-                        next_bound = min(next_bound, node.estimate + node.depth);
-                    } else {
-                        pq.push(make_pair(node, i));
-                    }
-                }
-                node.cube.invert(curr_move);
-            }
+            if (dfs(cube, g + 1, bound, face, nextBnd)) return true;
 
+            path.pop_back();
+            cube.invert(mv);
         }
-        return make_pair(rubiksCube, next_bound);
+        return false;
     }
 
 public:
     T rubiksCube;
 
-    IDAstarSolver(T _rubiksCube, string fileName) {
-        rubiksCube = _rubiksCube;
-        cornerDB.fromFile(fileName);
+    // Constructor 1: load the pattern database from file (CLI / one-shot mode)
+    IDAstarSolver(T _rubiksCube, const std::string& fileName)
+        : rubiksCube(_rubiksCube),
+          ownedDB(std::make_unique<CornerPatternDatabase>()),
+          dbPtr(nullptr) {
+        ownedDB->fromFile(fileName);
+        dbPtr = ownedDB.get();
     }
 
-    vector<RubiksCube::MOVE> solve() {
-        int bound = 1;
-        auto p = IDAstar(bound);
-        while (p.second != bound) {
-            resetStructure();
-            bound = p.second;
-            p = IDAstar(bound);
+    // Constructor 2: use a pre-loaded database (server mode — no file I/O per request)
+    IDAstarSolver(T _rubiksCube, CornerPatternDatabase& preloadedDB)
+        : rubiksCube(_rubiksCube),
+          ownedDB(nullptr),
+          dbPtr(&preloadedDB) {}
+
+    std::vector<RubiksCube::MOVE> solve() {
+        int bound = dbPtr->getNumMoves(rubiksCube);
+        path.clear();
+
+        while (true) {
+            int nextBnd = INT_MAX;
+            T cube = rubiksCube; // work on a copy; rubiksCube is untouched until solved
+            if (dfs(cube, 0, bound, -1, nextBnd)) {
+                rubiksCube = cube;
+                return path;
+            }
+            if (nextBnd == INT_MAX) return {}; // cube is unsolvable
+            bound = nextBnd;
+            path.clear();
         }
-        T solved_cube = p.first;
-        assert(solved_cube.isSolved());
-        T curr_cube = solved_cube;
-        while (!(curr_cube == rubiksCube)) {
-            RubiksCube::MOVE curr_move = move_done[curr_cube];
-            moves.push_back(curr_move);
-            curr_cube.invert(curr_move);
-        }
-        rubiksCube = solved_cube;
-        reverse(moves.begin(), moves.end());
-        return moves;
     }
 };
 
-#endif //RUBIKS_CUBE_SOLVER_IDASTARSOLVER_H
+#endif // RUBIKS_CUBE_SOLVER_IDASTARSOLVER_H

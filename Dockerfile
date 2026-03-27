@@ -20,6 +20,8 @@ COPY main.cpp ./
 # Note: RubiksCube1dArray.cpp is NOT listed separately — main.cpp already
 # includes it directly via #include, so listing it again causes an ODR violation.
 RUN g++ -std=c++17 -O2 -o rubiks_cube_solver main.cpp Model/RubiksCube.cpp Model/RubiksCube3dArray.cpp PatternDatabases/NibbleArray.cpp PatternDatabases/PatternDatabase.cpp PatternDatabases/CornerPatternDatabase.cpp PatternDatabases/CornerDBMaker.cpp PatternDatabases/math.cpp -I .
+# Note: RubiksCube1dArray.cpp and RubiksCubeBitboard.cpp are NOT listed separately —
+# main.cpp includes them directly via #include to avoid ODR violations.
 
 # Stage 3: Production Node.js server
 FROM node:18-slim
