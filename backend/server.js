@@ -9,11 +9,19 @@ const port = 3001;
 app.use(cors());
 app.use(express.json());
 
-// Path to the compiled C++ executable
-const solverPath = path.join(__dirname, '..', 'rubiks_cube_solver');
+// Serve React frontend in production
+const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+app.use(express.static(frontendDist));
+
+// Path to the compiled C++ executable (add .exe on Windows)
+const solverBin = process.platform === 'win32' ? 'rubiks_cube_solver.exe' : 'rubiks_cube_solver';
+const solverPath = path.join(__dirname, '..', solverBin);
 
 // Timeout for the solver process (30 seconds)
 const SOLVE_TIMEOUT_MS = 30000;
+
+// The C++ binary uses relative paths for Databases/ — run it from the project root
+const projectRoot = path.join(__dirname, '..');
 
 // ---- SCRAMBLE ENDPOINT ----
 // Generates a valid scramble using the C++ code's randomShuffleCube()
@@ -23,7 +31,7 @@ app.get('/scramble', (req, res) => {
 
     console.log(`Received scramble request with depth: ${clampedDepth}`);
 
-    execFile(solverPath, ['scramble', String(clampedDepth)], { timeout: 10000 }, (error, stdout, stderr) => {
+    execFile(solverPath, ['scramble', String(clampedDepth)], { timeout: 10000, cwd: projectRoot }, (error, stdout) => {
         if (error) {
             console.error(`Scramble error: ${error}`);
             return res.status(500).json({ error: 'Failed to generate scramble', details: error.message });
@@ -73,7 +81,7 @@ app.post('/solve', (req, res) => {
     else if (algorithm === 'IDDFS') algoId = '4';
 
     // Call the C++ executable with the cube state string and the selected algorithm ID
-    const child = execFile(solverPath, [cubeState, algoId], { timeout: SOLVE_TIMEOUT_MS }, (error, stdout, stderr) => {
+    const child = execFile(solverPath, [cubeState, algoId], { timeout: SOLVE_TIMEOUT_MS, cwd: projectRoot }, (error, stdout, stderr) => {
         if (error) {
             if (error.killed) {
                 console.error('Solver timed out after 30 seconds.');
@@ -111,6 +119,11 @@ app.post('/solve', (req, res) => {
             rawOutput: movesOutput,
         });
     });
+});
+
+// SPA fallback — serve index.html for any unknown route
+app.get('/{*splat}', (_req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
 });
 
 app.listen(port, () => {

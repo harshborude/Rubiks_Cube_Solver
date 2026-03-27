@@ -194,6 +194,12 @@ function App() {
     return parsed;
   };
 
+  const handleScanComplete = (scannedState) => {
+    setCubeState(scannedState);
+    setInputMode('manual');
+    addLog('Cube scanned! Verify the state in the visualizer, then click Solve.', 'success');
+  };
+
   const handleScramble = async () => {
     addLog('Generating random scramble via C++ backend...', 'system');
     
@@ -236,12 +242,12 @@ function App() {
 
         {/* Right/Bottom Column: Controls */}
         <div className="lg:col-span-5 w-full flex flex-col gap-6">
-          <InputControls 
-            onScramble={handleScramble} 
-            addLog={addLog} 
-            setCubeState={setCubeState} 
+          <InputControls
+            onScramble={handleScramble}
+            addLog={addLog}
             inputMode={inputMode}
             setInputMode={setInputMode}
+            onScanComplete={handleScanComplete}
           />
           
           <SolverControls 

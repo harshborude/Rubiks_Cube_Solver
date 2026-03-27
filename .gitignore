@@ -67,3 +67,11 @@ opencv_world*.dll
 
 node_modules/
 .env
+
+# =========================
+# Extra junk
+# =========================
+build_backend/
+bits/
+tempCodeRunnerFile.cpp
+debug_*.cpp

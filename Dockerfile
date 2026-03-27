@@ -17,7 +17,9 @@ COPY Scanner ./Scanner
 COPY Solver ./Solver
 COPY main.cpp ./
 # We can just build with g++ since it's a single executable now, no need for CMake
-RUN g++ -std=c++17 -O2 -o rubiks_cube_solver main.cpp Model/RubiksCube.cpp Model/RubiksCube3dArray.cpp Model/RubiksCube1dArray.cpp PatternDatabases/NibbleArray.cpp PatternDatabases/PatternDatabase.cpp PatternDatabases/CornerPatternDatabase.cpp PatternDatabases/CornerDBMaker.cpp PatternDatabases/math.cpp -I .
+# Note: RubiksCube1dArray.cpp is NOT listed separately — main.cpp already
+# includes it directly via #include, so listing it again causes an ODR violation.
+RUN g++ -std=c++17 -O2 -o rubiks_cube_solver main.cpp Model/RubiksCube.cpp Model/RubiksCube3dArray.cpp PatternDatabases/NibbleArray.cpp PatternDatabases/PatternDatabase.cpp PatternDatabases/CornerPatternDatabase.cpp PatternDatabases/CornerDBMaker.cpp PatternDatabases/math.cpp -I .
 
 # Stage 3: Production Node.js server
 FROM node:18-slim

@@ -1,11 +1,11 @@
 import React from 'react';
 import { Camera, Shuffle, Keyboard } from 'lucide-react';
+import CameraScanner from './CameraScanner';
 
-const InputControls = ({ onScramble, addLog, setCubeState, inputMode, setInputMode }) => {
+const InputControls = ({ onScramble, addLog, inputMode, setInputMode, onScanComplete }) => {
   const handleScanClick = () => {
     setInputMode('scan');
-    addLog('Initializing camera feed...', 'system');
-    setTimeout(() => addLog('Error: Camera permissions not granted or webcam unavailable. Cannot scan physical cube.', 'error'), 1500);
+    addLog('Camera scan mode active. Point camera at each face and press Capture.', 'system');
   };
 
   const handleManualClick = () => {
@@ -21,7 +21,7 @@ const InputControls = ({ onScramble, addLog, setCubeState, inputMode, setInputMo
   return (
     <div className="glass-panel w-full p-4 md:p-6 drop-shadow-lg">
       <h2 className="text-xl font-semibold mb-4 text-slate-200">Input Method</h2>
-      
+
       <div className="flex bg-slate-800/50 p-1 rounded-xl w-full max-w-sm mb-6 shadow-inner ring-1 ring-white/5">
         <button
           onClick={handleScanClick}
@@ -44,10 +44,13 @@ const InputControls = ({ onScramble, addLog, setCubeState, inputMode, setInputMo
       </div>
 
       <div className="text-sm text-slate-400 min-h-[40px]">
-        {inputMode === 'scan' && <p>Hold your Rubik's Cube to the camera to automatically detect its current state.</p>}
         {inputMode === 'scramble' && <p>Click the Random tab again to generate a new shuffled state.</p>}
         {inputMode === 'manual' && <p>Click on grid squares in the visualizer above to change their colors.</p>}
       </div>
+
+      {inputMode === 'scan' && (
+        <CameraScanner onComplete={onScanComplete} addLog={addLog} />
+      )}
     </div>
   );
 };
